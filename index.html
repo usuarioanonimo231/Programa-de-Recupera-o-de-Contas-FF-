@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Hacker - Recuperação de Contas Free Fire</title>
+    <style>
+        /* ==========================================================================
+           TEMA DE CORES E ESTILOS (HACKER MATRIX COM EFEITO GLOW)
+           ========================================================================== */
+        :root {
+            --fundo-principal: #040805;
+            --fundo-cartao: rgba(10, 15, 12, 0.75);
+            --fundo-input: rgba(5, 10, 6, 0.85);
+            --cor-neon: #00ff66;
+            --cor-neon-escura: #00aa44;
+            --borda-neon: rgba(0, 255, 102, 0.4);
+            --borda-apagada: rgba(0, 68, 27, 0.5);
+            --texto-branco: #ffffff;
+            --aviso-amarelo: #ffcc00;
+            --raio-borda: 12px;
+            --transicao: all 0.25s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--fundo-principal);
+            background: radial-gradient(circle at center, #0a1f0f 0%, #020503 100%);
+            color: var(--texto-branco);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        /* CANVAS DA REDE NEURAL (Fundo Fixo) */
+        #canvasRedeNeural {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ELEMENTOS DA FRENTE */
+        .caixa-login, .container-sistema {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* TELA DE LOGIN ESTILIZADA (Glassmorphism) */
+        .caixa-login {
+            width: 100%;
+            max-width: 420px;
+            background: var(--fundo-cartao);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid var(--cor-neon);
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.25), inset 0 0 15px rgba(0, 255, 102, 0.1);
+            border-radius: var(--raio-borda);
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .caixa-login h2 {
+            color: var(--cor-neon);
+            text-align: center;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+
+        .erro-login {
+            color: #ff3333;
+            font-size: 0.85rem;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+        }
+
+        /* CONTAINER DO PAINEL PRINCIPAL */
+        .container-sistema {
+            width: 100%;
+            max-width: 1150px;
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 900px) {
+            .container-sistema { grid-template-columns: 1.3fr 1fr; }
+            .cabecalho-cheio { grid-column: span 2; }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            border: 1px solid var(--borda-neon);
+            padding: 25px;
+            background: var(--fundo-cartao);
+            backdrop-filter: blur(5px);
+            border-radius: var(--raio-borda);
+        }
+
+        header h1 {
+            font-size: 1.9rem;
+            color: var(--cor-neon);
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        /* Barra de Progresso */
+        .caixa-progresso {
+            background: var(--fundo-cartao);
+            border: 1px solid var(--borda-apagada);
+            border-radius: var(--raio-borda);
+            padding: 16px;
+            margin-bottom: 5px;
+        }
+
+        .info-progresso {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: var(--cor-neon);
+        }
+
+        .barra-fora {
+            background: var(--fundo-input);
+            border: 1px solid var(--borda-apagada);
+            border-radius: 4px;
+            height: 12px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .barra-dentro {
+            background: var(--cor-neon);
+            box-shadow: 0 0 10px var(--cor-neon);
+            height: 100%;
+            width: 25%;
+            transition: var(--transicao);
+        }
+
+        /* Painel Central de Formulários */
+        .painel {
+            background-color: var(--fundo-cartao);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--borda-neon);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.1);
+            border-radius: var(--raio-borda);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .etapa-bloco { display: none; }
+        .etapa-bloco.ativa { display: flex; flex-direction: column; gap: 20px; }
+
+        .etapa-cabecalho {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--borda-apagada);
+            padding-bottom: 16px;
+        }
+
+        .etapa-numero {
+            background: var(--cor-neon);
+            color: #000;
+            font-weight: 800;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .etapa-cabecalho h2 { font-size: 1.15rem; color: var(--cor-neon); }
+
+        .grupo-campo { display: flex; flex-direction: column; gap: 8px; }
+
+        label { font-size: 0.85rem; color: var(--cor-neon); font-weight: 600; }
+
+        input, select, textarea {
+            background-color: var(--fundo-input);
+            border: 1px solid var(--borda-apagada);
+            color: var(--texto-branco);
+            padding: 14px 16px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: var(--transicao);
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--cor-neon);
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.25);
+        }
+
+        .grupo-selecao {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .grupo-selecao input { width: auto; accent-color: var(--cor-neon); }
+
+        /* Botões */
+        .linha-botoes { display: flex; gap: 12px; margin-top: 12px; }
+
+        .btn {
+            background-color: transparent;
+            color: var(--cor-neon);
+            border: 1px solid var(--cor-neon);
+            padding: 14px 28px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transicao);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .btn:hover {
+            background-color: var(--cor-neon);
+            color: #000;
+            box-shadow: 0 0 15px var(--cor-neon);
+        }
+
+        .btn-secundario { border: 1px solid var(--borda-apagada); color: #00aa44; }
+        .btn-secundario:hover { background-color: var(--borda-apagada); color: var(--cor-neon); }
+
+        /* Barra Lateral */
+        .barra-lateral { display: flex; flex-direction: column; gap: 20px; }
+
+        .bloco-lateral {
+            background: var(--fundo-cartao);
+            border: 1px solid var(--borda-apagada);
+            border-radius: var(--raio-borda);
+            padding: 24px;
+        }
+
+        .titulo-bloco {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--cor-neon);
+            border-bottom: 1px solid var(--borda-apagada);
+            padding-bottom: 12px;
+        }
+
+        /* Caixa de chat do Assistente */
+        .caixa-chat { height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg-chat { padding: 12px; border-radius: 6px; font-size: 0.85rem; line-height: 1.4; max-width: 95%; }
+        .msg-chat.sistema { background: var(--fundo-input); border-left: 3px solid var(--cor-neon); }
+
+        .caixa-dica { background: rgba(0, 255, 102, 0.02); border: 1px dashed var(--borda-apagada); padding: 12px; font-size: 0.85rem; }
+
+        /* Resultados */
+        .grade-resultados { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 12px; }
+        @media(min-width: 600px) { .grade-resultados { grid-template-columns: 1fr 1fr; } }
+
+        .cartao-metrica { background: var(--fundo-input); border: 1px solid var(--borda-apagada); padding: 16px; text-align: center; border-radius: 6px; }
+        .valor-metrica { font-size: 1.8rem; font-weight: 800; color: var(--cor-neon); margin-top: 4px; }
+        .selo-status { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; margin-top: 8px; border: 1px solid var(--cor-neon); }
+
+        .lista-analise { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+        .icone-ok { color: var(--cor-neon); }
+        .icone-aviso { color: var(--aviso-amarelo); }
+
+        textarea.texto-resultado {
+            height: 280px;
+            background-color: #020202;
+            border: 1px solid var(--cor-neon);
+            color: var(--cor-neon);
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .acoes-memoria { display: flex; gap: 8px; margin-top: 12px; }
+        .btn-pequeno { padding: 6px 12px; font-size: 0.75rem; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<canvas id="canvasRedeNeural"></canvas>
+
+<div class="caixa-login" id="tela-de-login">
+    <h2>Acesso Privado: ANONYMOUS</h2>
+    <p style="font-size:0.8rem; color:#8c8c8c; text-align:center; margin-bottom:5px;">
+        Insira as chaves de descriptografia para acessar o painel de recuperação.
+    </p>
+    
+    <div class="grupo-campo">
+        <label for="usuario">ID de Usuário</label>
+        <input type="text" id="usuario" placeholder="Digite o usuário..." autocomplete="off">
+    </div>
+    
+    <div class="grupo-campo">
+        <label for="senha">Código de Acesso (Senha)</label>
+        <input type="password" id="senha" placeholder="••••••••">
+    </div>
+    
+    <div class="erro-login" id="aviso-erro-login">Acesso Negado! Chave incorreta.</div>
+    
+    <button class="btn" onclick="ControleDoPainel.tentarLogar()">Autenticar no Sistema →</button>
+</div>
+
+<div class="container-sistema" id="painel-principal-sistema">
+
+    <div class="cabecalho-cheio">
+        <header>
+            <h1>SISTEMA DE RECUPERAÇÃO - FREE FIRE</h1>
+            <p>Análise interna de dados estruturados e gerador de formulários para suporte técnico</p>
+        </header>
+
+        <div class="caixa-progresso">
+            <div class="info-progresso">
+                <span id="texto-passo-progresso">Passo 1 de 4: Dados Básicos</span>
+                <span id="porcentagem-progresso">25%</span>
+            </div>
+            <div class="barra-fora">
+                <div id="barra-progresso-interna" class="barra-dentro"></div>
+            </div>
+        </div>
+    </div>
+
+    <main class="painel" id="painel-central">
+        
+        <div class="etapa-bloco ativa" id="etapa-1">
+            <div class="etapa-cabecalho">
+                <span class="etapa-numero">1</span>
+                <h2>Informações de Registro da Conta</h2>
+            </div>
+            <div class="grupo-campo">
+                <label for="f-uid">ID do Jogador (UID)</label>
+                <input type="text" id="f-uid" placeholder="Ex: 28471049" oninput="ControleDoPainel.atualizarAnalise()">
+            </div>
+            <div class="grupo-campo">
+                <label for="f-nickname">Último Apelido (Nick) utilizado</label>
+                <input type="text" id="f-nickname" placeholder="Ex: Nobru_Apelão" oninput="ControleDoPainel.atualizarAnalise()">
+            </div>
+            <div class="grupo-campo">
+                <label for="f-criacao">Período estimado de criação da conta</label>
+                <select id="f-criacao" onchange="ControleDoPainel.atualizarAnalise()">
+                    <option value="">Escolha um período histórico...</option>
+                    <option value="2017-v1">Final de 2017 (Fase Beta / Passe Sakura)</option>
+                    <option value="2018-v1">Início de 2018 (Passe Hip Hop / Passe Royal)</option>
+                    <option value="2018-v2">Final de 2018 (Introdução de Ranqueadas / Calça Angelical)</option>
+                    <option value="2019">Ano de 2019 (Passe Egito / Lançamento do Alok)</option>
+                    <option value="2020">Ano de 2020 (Período de Isolamento / Evento Chrono)</option>
+                    <option value="2021">Ano de 2021 (Circuito Mundial / Skyler)</option>
+                    <option value="2022-2024">Entre 2022 e 2024 (Passes Booyah / Nova era)</option>
+                    <option value="recent">Período Recente (2025 em diante)</option>
+                </select>
+            </div>
+            <div class="grupo-campo">
+                <label for="f-cenario">Qual o cenário real da perda de acesso?</label>
+                <select id="f-cenario" onchange="ControleDoPainel.quandoMudarCenario()">
+                    <option value="">Selecione o motivo exato...</option>
+                    <option value="fb_perdido">Perda de credenciais do Facebook antigo (E-mail/Senha)</option>
+                    <option value="fb_desativado">Perfil do Facebook desativado ou banido pela Meta</option>
+                    <option value="fb_excluido">Perfil do Facebook excluído permanentemente</option>
+                    <option value="google_perdido">Perda de acesso permanente ao Gmail/Google</option>
+                    <option value="google_hackeado">Conta Google invadida com alteração de dados secundários</option>
+                    <option value="apple_id">Falha de autenticação ou perda do Apple ID</option>
+                    <option value="vk_huawei">Problemas de login com serviços VK ou Huawei</option>
+                    <option value="guest_lost">Conta de convidado apagada após formatação do sistema</option>
+                    <option value="hackeada_direto">Invasão direta na conta do jogo com troca de vínculos</option>
+                    <option value="mudanca_vinculo">Erro técnico durante a migração de plataformas de login</option>
+                    <option value="banimento">Suspensão de conta (Solicitação de contestação de ban)</option>
+                </select>
+            </div>
+            <div class="linha-botoes">
+                <button class="btn" onclick="ControleDoPainel.irParaEtapa(2)">Avançar Etapa →</button>
+            </div>
+        </div>
+
+        <div class="etapa-bloco" id="etapa-2">
+            <div class="etapa-cabecalho">
+                <span class="etapa-numero">2</span>
+                <h2>Histórico de Conexão e Hardware</h2>
+            </div>
+            
+            <div id="perguntas-dinamicas" class="grupo-campo" style="gap: 20px;"></div>
+
+            <div class="grupo-campo">
+                <label for="f-device-primeiro">Qual o primeiro modelo de celular usado nesta conta?</label>
+                <input type="text" id="f-device-primeiro" placeholder="Ex: Samsung Galaxy J5 Prime" oninput="ControleDoPainel.atualizarAnalise()">
+            </div>
+            <div class="grupo-campo">
+                <label for="f-device-recente">Qual o último modelo de celular que acessou a conta?</label>
+                <input type="text" id="f-device-recente" placeholder="Ex: Xiaomi Redmi Note 11" oninput="ControleDoPainel.atualizarAnalise()">
+            </div>
+            <div class="grupo-campo">
+                <label for="f-localidade">Cidade e Estado onde os acessos eram frequentes</label>
+                <input type="text" id="f-localidade" placeholder="Ex: Rio de Janeiro - RJ" oninput="ControleDoPainel.atualizarAnalise()">
+            </div>
+
+            <div class="linha-botoes">
+                <button class="btn btn-secundario" onclick="ControleDoPainel.irParaEtapa(1)">← Voltar</button>
+                <button class="btn" onclick="ControleDoPainel.irParaEtapa(3)">Avançar Etapa →</button>
+            </div>
+        </div>
+
+        <div class="etapa-bloco" id="etapa-3">
+            <div class="etapa-cabecalho">
+                <span class="etapa-numero">3</span>
+                <h2>Dados Internos e Faturamento</h2>
+            </div>
+            <div class="grupo-campo">
+                <label for="f-nicks-antigos">Lembra de antigos apelidos ou nome de antigas Guildas?</label>
+                <input type="text" id="f-nicks-antigos" placeholder="Ex: ID_BR_LEANDRO / Guilda Los Grandes" oninput="ControleDoPainel.atualizarAnalise()">
+            </div>
+            <div class="grupo-campo">
+                <label for="f-recargas">Como realizava as recargas de Diamantes na conta?</label>
+                <input type="text" id="f-recargas" placeholder="Ex: Compras via PIX pelo portal Recarga Jogo" oninput="ControleDoPainel.atualizarAnalise()">
+                <label class="grupo-selecao">
+                    <input type="checkbox" id="f-no-recargas" onchange="ControleDoPainel.atualizarAnalise()"> Nunca realizei recargas (Jogador Gratuito)
+                </label>
+            </div>
+            <div class="grupo-campo">
+                <label for="f-itens-raros">Descreva itens, trajes ou passes antigos marcantes</label>
+                <textarea id="f-itens-raros" rows="3" placeholder="Ex: Conjunto Tech, Jaqueta de Veterano, Bandeirão, Passe Temporada 4..." oninput="ControleDoPainel.atualizarAnalise()"></textarea>
+            </div>
+            <div class="grupo-campo">
+                <label for="f-tom">Tom e formato da petição final</label>
+                <select id="f-tom">
+                    <option value="formal">Formato Técnico e Formal (Mais Recomendado)</option>
+                    <option value="assertivo">Formato Objetivo (Focado em Dados Diretos)</option>
+                    <option value="detalhado">Histórico Cronológico (Texto Longo e Explicativo)</option>
+                </select>
+            </div>
+            <div class="linha-botoes">
+                <button class="btn btn-secundario" onclick="ControleDoPainel.irParaEtapa(2)">← Voltar</button>
+                <button class="btn" onclick="ControleDoPainel.gerarResultadoFinal()">Compilar Dados do Ticket →</button>
+            </div>
+        </div>
+
+        <div class="etapa-bloco" id="etapa-4">
+            <div class="etapa-cabecalho">
+                <span class="etapa-numero">4</span>
+                <h2>Petição Pronta para Envio</h2>
+            </div>
+
+            <div class="grade-resultados">
+                <div class="cartao-metrica">
+                    <label>Estruturação de Dados</label>
+                    <div class="valor-metrica" id="resultado-pontos">0/100</div>
+                    <div id="resultado-selo" class="selo-status">AGUARDANDO</div>
+                </div>
+                <div class="cartao-metrica">
+                    <label>Aprovação Estimada</label>
+                    <div class="valor-metrica" id="resultado-chance" style="font-size: 1.3rem; padding: 10px 0;">NÃO CALCULADO</div>
+                    <p style="font-size:0.75rem; color: #8c8c8c;">Cálculo com base na solidez dos campos declarados</p>
+                </div>
+            </div>
+
+            <div class="grupo-campo">
+                <label>Texto Estruturado (Copie na íntegra para enviar ao suporte):</label>
+                <textarea id="texto-ticket-final" class="texto-resultado" readonly></textarea>
+            </div>
+
+            <div class="linha-botoes" style="flex-wrap: wrap;">
+                <button class="btn btn-secundario btn-pequeno" onclick="ControleDoPainel.copiarTexto()">Copiar para Área de Transferência</button>
+                <button class="btn btn-secundario btn-pequeno" onclick="ControleDoPainel.baixarBlocoNotas()">Salvar como Arquivo .txt</button>
+            </div>
+
+            <button class="btn" onclick="ControleDoPainel.abrirLinkSuporte()">
+                Abrir Portal de Suporte Oficial da Garena ↗
+            </button>
+
+            <div class="linha-botoes">
+                <button class="btn btn-secundario" onclick="ControleDoPainel.irParaEtapa(3)">← Revisar Formulário</button>
+            </div>
+        </div>
+
+    </main>
+
+    <aside class="barra-lateral">
+        <div class="bloco-lateral">
+            <div class="titulo-bloco">🤖 Assistente do Painel</div>
+            <div class="caixa-chat" id="caixa-de-chat"></div>
+        </div>
+
+        <div class="bloco-lateral">
+            <div class="titulo-bloco">💡 Orientação Dinâmica</div>
+            <div class="caixa-dica" id="caixa-de-dicas">
+                Insira o ID de jogador para iniciar os barramentos de conferência.
+            </div>
+        </div>
+
+        <div class="bloco-lateral">
+            <div class="titulo-bloco">🔎 Relatório de Consistência</div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="color: var(--aviso-amarelo); display:block; margin-bottom:6px;">Inconsistências Identificadas</label>
+                    <ul class="lista-analise" id="analise-erros">
+                        <li><span class="icone-aviso">[!]</span> Nenhum dado coletado até o momento.</li>
+                    </ul>
+                </div>
+                <div>
+                    <label style="color: #aaa; display:block; margin-bottom:6px;">Parâmetros Desejáveis Ausentes</label>
+                    <ul class="lista-analise" id="analise-faltando">
+                        <li><span class="icone-aviso">[!]</span> Aguardando dados primários.</li>
+                    </ul>
+                </div>
+                <div>
+                    <label style="color: var(--cor-neon); display:block; margin-bottom:6px;">Campos Validados</label>
+                    <ul class="lista-analise" id="analise-sucesso">
+                        <li>Nenhum parâmetro validado.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloco-lateral">
+            <div class="titulo-bloco">💾 Banco de Dados Local</div>
+            <p style="font-size:0.8rem; color:#8c8c8c; line-height:1.4; margin-bottom:12px;">
+                Os registros preenchidos ficam alocados estritamente na memória cache de seu terminal privado.
+            </p>
+            <div class="acoes-memoria">
+                <button class="btn btn-secundario btn-pequeno" onclick="ControleDoPainel.limparMemoria()">Limpar Tudo</button>
+                <button class="btn btn-secundario btn-pequeno" onclick="ControleDoPainel.exportarBackup()">Exportar .JSON</button>
+                <button class="btn btn-secundario btn-pequeno" onclick="ControleDoPainel.importarBackup()">Importar</button>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+/* ==========================================================================
+   MÓDULO DE EXPORTAÇÃO E IMPORTAÇÃO WEB NATIVO
+   ========================================================================== */
+const AmbienteWeb = {
+    copiarTextoEstavel: function(texto) {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto);
+            } else {
+                const areaEscondida = document.createElement("textarea");
+                areaEscondida.value = texto;
+                areaEscondida.style.position = "fixed";
+                areaEscondida.style.opacity = "0";
+                document.body.appendChild(areaEscondida);
+                areaEscondida.focus();
+                areaEscondida.select();
+                document.execCommand('copy');
+                document.body.removeChild(areaEscondida);
+            }
+            alert("Sucesso! O conteúdo foi enviado para sua área de transferência.");
+            return true;
+        } catch (e) {
+            alert("Erro ao copiar automaticamente. Selecione o texto e copie manualmente.");
+            return false;
+        }
+    },
+
+    gerenciarDownloadEstavel: function(nomeArquivo, conteudo, mimeType) {
+        try {
+            const blob = new Blob([conteudo], {type: mimeType});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = nomeArquivo;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } catch(e) {
+            alert("Erro ao gerar arquivo de download.");
+        }
+    }
+};
+
+/* ==========================================================================
+   SISTEMA DE ANIMAÇÃO DA REDE NEURAL (MANTIDO E CORRIGIDO)
+   ========================================================================== */
+const canvas = document.getElementById('canvasRedeNeural');
+const contexto = canvas.getContext('2d');
+let animacaoId = null;
+
+function redimensionarCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+redimensionarCanvas();
+window.addEventListener('resize', redimensionarCanvas);
+
+const coordenadasMouse = { x: null, y: null, raioAtencao: 120 };
+window.addEventListener('mousemove', (evento) => {
+    coordenadasMouse.x = evento.clientX;
+    coordenadasMouse.y = evento.clientY;
+});
+window.addEventListener('mouseleave', () => {
+    coordenadasMouse.x = null;
+    coordenadasMouse.y = null;
+});
+
+const listaDeNos = [];
+const limiteDeNos = 75; 
+const distanciaMaximaLinha = 125;
+
+class NoRede {
+    constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.velocidadeX = (Math.random() - 0.5) * 0.7;
+        this.velocidadeY = (Math.random() - 0.5) * 0.7;
+        this.raio = Math.random() * 1.5 + 1;
+    }
+
+    desenhar() {
+        contexto.beginPath();
+        contexto.arc(this.x, this.y, this.raio, 0, Math.PI * 2);
+        contexto.fillStyle = 'rgba(0, 255, 102, 0.7)';
+        contexto.fill();
+    }
+
+    atualizar() {
+        this.x += this.velocidadeX;
+        this.y += this.velocidadeY;
+
+        if (this.x < 0 || this.x > canvas.width) this.velocidadeX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.velocidadeY *= -1;
+
+        if (coordenadasMouse.x !== null && coordenadasMouse.y !== null) {
+            let diferencaX = coordenadasMouse.x - this.x;
+            let diferencaY = coordenadasMouse.y - this.y;
+            let distanciaMouse = Math.sqrt(diferencaX * diferencaX + diferencaY * diferencaY);
+            if (distanciaMouse < coordenadasMouse.raioAtencao) {
+                this.x += diferencaX * 0.01;
+                this.y += diferencaY * 0.01;
+            }
+        }
+    }
+}
+
+for (let i = 0; i < limiteDeNos; i++) {
+    listaDeNos.push(new NoRede());
+}
+
+function conectarNos() {
+    for (let i = 0; i < listaDeNos.length; i++) {
+        for (let j = i + 1; j < listaDeNos.length; j++) {
+            const diferencaX = listaDeNos[i].x - listaDeNos[j].x;
+            const diferencaY = listaDeNos[i].y - listaDeNos[j].y;
+            const distancia = Math.sqrt(diferencaX * diferencaX + diferencaY * diferencaY);
+
+            if (distancia < distanciaMaximaLinha) {
+                const opacidade = (1 - (distancia / distanciaMaximaLinha)) * 0.18;
+                contexto.strokeStyle = `rgba(0, 255, 102, ${opacidade})`;
+                contexto.lineWidth = 0.6;
+                contexto.beginPath();
+                contexto.moveTo(listaDeNos[i].x, listaDeNos[i].y);
+                contexto.lineTo(listaDeNos[j].x, listaDeNos[j].y);
+                contexto.stroke();
+            }
+        }
+    }
+}
+
+function renderizarAnimacao() {
+    contexto.clearRect(0, 0, canvas.width, canvas.height);
+    listaDeNos.forEach(no => {
+        no.atualizar();
+        no.desenhar();
+    });
+    conectarNos();
+    animacaoId = requestAnimationFrame(renderizarAnimacao);
+}
+renderizarAnimacao();
+
+/* ==========================================================================
+   BANCO DE DADOS LOCAL E MENSAGENS ESTRUTURADAS
+   ========================================================================== */
+const BancoDeDados = {
+    cronologiaId: {
+        "2017-v1": { minId: 1000000, maxId: 50000000, desc: "Final de 2017 (Fase Beta / Passe Sakura)" },
+        "2018-v1": { minId: 50000000, maxId: 200000000, desc: "Início de 2018 (Passes Antigos)" },
+        "2018-v2": { minId: 200000000, maxId: 500000000, desc: "Final de 2018 (Introdução de Ranqueadas)" },
+        "2019": { minId: 500000000, maxId: 1000000000, desc: "Ano de 2019 (Chegada do Alok)" },
+        "2020": { minId: 1000000000, maxId: 2000000000, desc: "Ano de 2020 (Isolamento / Chrono)" },
+        "2021": { minId: 2000000000, maxId: 3000000000, desc: "Ano de 2021 (Circuito Mundial / Skyler)" },
+        "2022-2024": { minId: 3000000000, maxId: 6000000000, desc: "Entre 2022 e 2024 (Passes Booyah)" },
+        "recent": { minId: 6000000000, maxId: 99999999999, desc: "Registro Recente (2025 em diante)" }
+    },
+    orientacoes: {
+        uid: "O UID numérico é imutável no banco de dados geral. Representa o index primário de rastreio de sua conta.",
+        nickname: "Insira a grafia exata do apelido. Caso possua caracteres especiais ou espaços ocultos, anote para avisar ao suporte.",
+        devices: "A equipe de segurança analisa logs de hardware. Fornecer as marcas e linhas exatas de celulares gera alta credibilidade.",
+        recargas: "Comprovantes fiscais de transações de diamantes agem como prova definitiva de posse de ativos digitais.",
+        itens: "A declaração de inventário antigo comprova atividade orgânica no servidor nas respectivas datas de lançamento."
+    },
+    mensagensChat: {
+        boasVindas: "Protocolo de assistência inicial ativo. Estou pronto para tabular e cruzar os dados históricos de sua conta para a formatação do ticket oficial de recuperação.",
+        fb_perdido: "Problema com vínculo Meta catalogado. Direcionando os parâmetros do script para enfatizar a comprovação por logs internos de hardware e dados de inventário do jogo.",
+        google_hackeado: "Invasão de provedor secundário identificada. Ajustando o algorítmo para dar peso às informações de rede local de internet e geolocalização habitual.",
+        guest_lost: "Perda de dados de perfil local (Convidado). É crucial fornecer detalhes específicos sobre nicks de amigos de equipe e nível exato do personagem.",
+        pontosAltos: "Petição estruturada com êxito. O volume de dados coletados atende aos requisitos críticos exigidos pelas diretrizes do suporte técnico.",
+        pontosBaixos: "Aviso: O documento final apresenta ausência de dados vitais. É altamente recomendável tentar lembrar de aparelhos antigos ou históricos de faturamento."
+    }
+};
+
+/* ==========================================================================
+   MOTOR LÓGICO E CALCULADORA DE ATRIBUTOS
+   ========================================================================== */
+const CalculadoraDePontos = {
+    analisarCampos: function() {
+        let score = 0;
+        let emFalta = [];
+        let irregularidades = [];
+        let validados = [];
+
+        try {
+            const uid = document.getElementById("f-uid").value.trim();
+            const nick = document.getElementById("f-nickname").value.trim();
+            const criacao = document.getElementById("f-criacao").value;
+            const cenario = document.getElementById("f-cenario").value;
+            const celPrimeiro = document.getElementById("f-device-primeiro") ? document.getElementById("f-device-primeiro").value.trim() : "";
+            const local = document.getElementById("f-localidade") ? document.getElementById("f-localidade").value.trim() : "";
+            const recargas = document.getElementById("f-recargas") ? document.getElementById("f-recargas").value.trim() : "";
+            const semRecargas = document.getElementById("f-no-recargas") ? document.getElementById("f-no-recargas").checked : false;
+            const itens = document.getElementById("f-itens-raros") ? document.getElementById("f-itens-raros").value.trim() : "";
+
+            if (uid) {
+                if (/^\d+$/.test(uid)) {
+                    score += 25;
+                    validados.push("Identificador UID numérico validado (+25)");
+                } else {
+                    irregularidades.push("O campo UID contém caracteres inválidos. Deve conter apenas algarismos numéricos.");
+                }
+            } else {
+                emFalta.push("O UID da conta não foi declarado (Indexador essencial ausente).");
+            }
+
+            if (nick) {
+                score += 15;
+                validados.push("Identidade nominal/Nick registrada (+15)");
+            } else {
+                emFalta.push("O Apelido (Nick) atual ou cronológico não foi informado.");
+            }
+
+            if (criacao) {
+                score += 10;
+                validados.push("Mapeamento temporal de criação definido (+10)");
+                
+                if (uid && /^\d+$/.test(uid)) {
+                    const uidNumerico = parseInt(uid, 10);
+                    const limites = BancoDeDados.cronologiaId[criacao];
+                    if (limites) {
+                        if (uidNumerico < limites.minId && criacao !== "2017-v1") {
+                            irregularidades.push("Inconsistência identificada: O número de UID é muito baixo para o período cronológico selecionado.");
+                        } else if (uidNumerico > limites.maxId) {
+                            irregularidades.push("Inconsistência identificada: O número de UID é excessivamente alto para o período cronológico selecionado.");
+                        }
+                    }
+                }
+            } else {
+                emFalta.push("O período cronológico de criação da conta não foi especificado.");
+            }
+
+            if (cenario) {
+                score += 10;
+                validados.push("Cenário de perda indexado (+10)");
+            } else {
+                emFalta.push("O motivo específico da perda de acesso não foi assinalado.");
+            }
+
+            if (celPrimeiro) {
+                score += 10;
+                validados.push("Hardware primordial catalogado (+10)");
+            } else {
+                emFalta.push("O modelo de dispositivo móvel primordial não foi inserido.");
+            }
+
+            if (local) {
+                score += 10;
+                validados.push("Geolocalização / Rede local preenchida (+10)");
+            } else {
+                emFalta.push("A região / localidade de tráfego de rede habitual não foi informada.");
+            }
+
+            if (recargas || semRecargas) {
+                score += 15;
+                validados.push("Histórico de transações verificado (+15)");
+                if (semRecargas && recargas) {
+                    irregularidades.push("Conflito: Foi assinalada a caixa de gratuidade, porém foram descritos dados no campo de recargas.");
+                }
+            } else {
+                emFalta.push("Falta declarar as informações ou ausência de faturamento.");
+            }
+
+            if (itens) {
+                score += 5;
+                validados.push("Inventário interno detalhado (+5)");
+            } else {
+                emFalta.push("Falta listar os ativos de inventário (Trajes/Passes).");
+            }
+        } catch(err) {
+            console.error("Erro interno no processamento matemático de dados.", err);
+        }
+
+        return { score, emFalta, irregularidades, validados };
+    }
+};
+
+/* ==========================================================================
+   CONSTRUTOR DA PETIÇÃO TEXTUAL
+   ========================================================================== */
+const CriadorDeTexto = {
+    compilarFormatacao: function() {
+        try {
+            const uid = document.getElementById("f-uid").value.trim();
+            const nick = document.getElementById("f-nickname").value.trim();
+            const criacao = document.getElementById("f-criacao").value;
+            const cenario = document.getElementById("f-cenario").value;
+            const celPrimeiro = document.getElementById("f-device-primeiro").value.trim();
+            const celRecente = document.getElementById("f-device-recente").value.trim();
+            const local = document.getElementById("f-localidade").value.trim();
+            const nicksAntigos = document.getElementById("f-nicks-antigos").value.trim();
+            const recargas = document.getElementById("f-recargas").value.trim();
+            const semRecargas = document.getElementById("f-no-recargas").checked;
+            const itens = document.getElementById("f-itens-raros").value.trim();
+            const tom = document.getElementById("f-tom").value;
+
+            let textoCenario = "";
+            switch(cenario) {
+                case "fb_perdido": textoCenario = "perdi de forma definitiva o acesso às credenciais do perfil do Facebook que se encontrava vinculado de forma exclusiva ao jogo"; break;
+                case "fb_desativado": textoCenario = "a plataforma externa Meta desativou/bloqueou o perfil do Facebook que estava vinculado à conta"; break;
+                case "google_hackeado": textoCenario = "minha conta do provedor Google (Gmail) sofreu uma invasão externa, resultando na perda completa de acesso ao e-mail associado"; break;
+                case "guest_lost": textoCenario = "utilizava uma conta local do tipo Convidado (Guest) e os arquivos de autenticação local foram removidos após uma limpeza no sistema do aparelho"; break;
+                case "hackeada_direto": textoCenario = "ocorreu um acesso não autorizado diretamente na conta do jogo, com posterior alteração indevida de todos os e-mails e redes de login associadas"; break;
+                default: textoCenario = "ocorreram falhas graves nos sistemas de autenticação externa, impossibilitando a validação do meu login de usuário";
+            }
+
+            let cabecalho = "";
+            if (tom === "assertivo") {
+                cabecalho = `Prezada Central de Suporte Garena.\n\nSolicito análise cadastral para fins de recuperação de conta. O motivo do pedido é que ${textoCenario}. Apresento abaixo o inventário de dados comprobatórios de minha titularidade exclusiva:`;
+            } else if (tom === "detalhado") {
+                cabecalho = `À equipe de Auditoria e Suporte Técnico Garena.\n\nVenho por meio deste chamado formal relatar a impossibilidade de acesso à minha conta ativa de jogo. O incidente ocorreu pois ${textoCenario}. Como utilizo este perfil de maneira contínua, cataloguei um histórico detalhado contendo informações cronológicas e técnicas para fins de validação no banco de dados interno de vocês:`;
+            } else {
+                cabecalho = `Prezados membros da equipe de Suporte Técnico da Garena.\n\nEscrevo para solicitar auxílio emergencial no processo de recuperação e alteração de vínculo de minha conta de jogo. Infelizmente, no momento, ${textoCenario}. Sendo eu o criador e legítimo detentor do perfil em questão, disponibilizo abaixo todas as especificações técnicas necessárias para verificação técnica:`;
+            }
+
+            let corpo = `\n\n=== ESPECIFICAÇÕES REGISTRADAS DA CONTA ===\n`;
+            corpo += `• Identificador Único de Usuário (UID): ${uid}\n`;
+            corpo += `• Apelido de Registro (Nick): ${nick}\n`;
+            
+            if (criacao) {
+                const labelTempo = BancoDeDados.cronologiaId[criacao]?.desc || "";
+                corpo += `• Janela cronológica de criação: ${labelTempo}\n`;
+            }
+            if (celPrimeiro) corpo += `• Aparelho celular de registro inicial: ${celPrimeiro}\n`;
+            if (celRecente) corpo += `• Último dispositivo de hardware utilizado: ${celRecente}\n`;
+            if (local) corpo += `• Região / Geolocalização padrão de acesso: ${local}\n`;
+            if (nicksAntigos) corpo += `• Registros antigos de apelido / Filiação de Guilda: ${nicksAntigos}\n`;
+            
+            if (recargas) {
+                corpo += `• Histórico / Canais de faturamento e recargas: ${recargas}\n`;
+            } else if (semRecargas) {
+                corpo += `• Histórico de transações: Conta gerida de forma puramente orgânica, sem transações financeiras arquivadas.\n`;
+            }
+
+            if (itens) {
+                corpo += `• Bens de inventário marcantes (Skins/Passes): ${itens}\n`;
+            }
+
+            let encerramento = `\nPermaneço à inteira disposição para o envio de capturas de tela antigas, faturas adicionais ou para responder a quaisquer perguntas complementares de segurança que a equipe técnica julgar necessárias para a validação da posse real.\n\nAtenciosamente, aguardo retorno do procedimento.`;
+
+            return cabecalho + corpo + encerramento;
+        } catch(e) {
+            return "Erro ao compilar texto final da petição.";
+        }
+    }
+};
+
+/* ==========================================================================
+   INTERACTION CONTROLLER
+   ========================================================================== */
+const ControleDoPainel = {
+    passoAtual: 1,
+    ultimoResultadoCompilado: null,
+
+    init: function() {
+        try {
+            this.recuperarRegistrosCache();
+            this.atualizarBarraProgresso();
+            this.escreverMensagemAssistente("boasVindas");
+            this.atualizarAnalise();
+        } catch(e) {
+            console.error("Falha ao inicializar views.", e);
+        }
+    },
+
+    tentarLogar: function() {
+        try {
+            const usuarioInformado = document.getElementById("usuario").value.trim();
+            const senhaInformada = document.getElementById("senha").value.trim();
+            const avisoErro = document.getElementById("aviso-erro-login");
+
+            if (usuarioInformado === "ANONYMOUS" && senhaInformada === "puxadas070981") {
+                avisoErro.style.display = "none";
+                document.getElementById("tela-de-login").style.display = "none";
+                document.getElementById("painel-principal-sistema").style.display = "grid";
+                this.init();
+            } else {
+                avisoErro.style.display = "block";
+            }
+        } catch(e) {
+            alert("Erro no processo de login.");
+        }
+    },
+
+    irParaEtapa: function(alvo) {
+        try {
+            if (alvo > this.passoAtual) {
+                if (this.passoAtual === 1) {
+                    const uid = document.getElementById("f-uid").value.trim();
+                    const nick = document.getElementById("f-nickname").value.trim();
+                    if (!uid || !nick) {
+                        alert("Atenção! É obrigatório o preenchimento inicial dos campos de UID e Nickname para prosseguir.");
+                        return;
+                    }
+                }
+            }
+            
+            document.querySelectorAll(".etapa-bloco").forEach(item => item.classList.remove("ativa"));
+            document.getElementById(`etapa-${alvo}`).classList.add("ativa");
+            this.passoAtual = alvo;
+            this.atualizarBarraProgresso();
+            this.gravarRegistrosCache();
+        } catch(e) {
+            alert("Erro ao transicionar de tela.");
+        }
+    },
+
+    atualizarBarraProgresso: function() {
+        try {
+            const porc = (this.passoAtual / 4) * 100;
+            document.getElementById("barra-progresso-interna").style.width = `${porc}%`;
+            document.getElementById("porcentagem-progresso").innerText = `${Math.round(porc)}%`;
+            
+            const nomenclaturas = [
+                "Passo 1 de 4: Dados Básicos",
+                "Passo 2 de 4: Histórico de Conexão e Hardware",
+                "Passo 3 de 4: Dados Internos e Faturamento",
+                "Passo 4 de 4: Petição Pronta"
+            ];
+            document.getElementById("texto-passo-progresso").innerText = nomenclaturas[this.passoAtual - 1];
+        } catch(e) {}
+    },
+
+    quandoMudarCenario: function() {
+        try {
+            const motivo = document.getElementById("f-cenario").value;
+            const boxDinamica = document.getElementById("perguntas-dinamicas");
+            boxDinamica.innerHTML = "";
+
+            if (!motivo) return;
+
+            this.escreverMensagemAssistente(motivo);
+
+            if (motivo.startsWith("fb_")) {
+                boxDinamica.innerHTML = `
+                    <label>Parâmetros Específicos do Vínculo Meta (Facebook)</label>
+                    <input type="text" id="f-din-1" placeholder="Informe o e-mail ou telefone original de login da rede social" oninput="ControleDoPainel.atualizarAnalise()">
+                    <input type="text" id="f-dyn-2" placeholder="Nome de usuário completo impresso no perfil do Facebook" oninput="ControleDoPainel.atualizarAnalise()">
+                `;
+            } else if (motivo.startsWith("google_")) {
+                boxDinamica.innerHTML = `
+                    <label>Parâmetros Específicos do Provedor Google</label>
+                    <input type="text" id="f-din-1" placeholder="E-mail exato do Gmail associado ao perfil" oninput="ControleDoPainel.atualizarAnalise()">
+                    <input type="text" id="f-dyn-2" placeholder="Data aproximada (mês/ano) em que ocorreu o bloqueio/perda" oninput="ControleDoPainel.atualizarAnalise()">
+                `;
+            } else if (motivo === "guest_lost") {
+                boxDinamica.innerHTML = `
+                    <label>Especificações de Conta Local (Convidado)</label>
+                    <input type="text" id="f-din-1" placeholder="Nível (Level) aproximado em que o personagem se encontrava" oninput="ControleDoPainel.atualizarAnalise()">
+                    <textarea id="f-dyn-2" rows="2" placeholder="Liste o nome (Nicks) de amigos frequentes adicionados na lista interna:" oninput="ControleDoPainel.atualizarAnalise()"></textarea>
+                `;
+            } else {
+                boxDinamica.innerHTML = `
+                    <label>Informações de Vínculos Suplementares</label>
+                    <input type="text" id="f-din-1" placeholder="Havia outras plataformas associadas em paralelo? (Ex: Twitter, VK)" oninput="ControleDoPainel.atualizarAnalise()">
+                `;
+            }
+            this.atualizarAnalise();
+        } catch(e) {
+            alert("Erro ao processar alteração de contexto.");
+        }
+    },
+
+    atualizarAnalise: function() {
+        try {
+            const dadosAnalise = CalculadoraDePontos.analisarCampos();
+            
+            const boxFalta = document.getElementById("analise-faltando");
+            const boxErros = document.getElementById("analise-erros");
+            const boxSucesso = document.getElementById("analise-sucesso");
+
+            boxFalta.innerHTML = dadosAnalise.emFalta.map(item => `<li>- ${item}</li>`).join("") || "<li>[✔] Estrutura completa, sem dados vitais ausentes.</li>";
+            boxErros.innerHTML = dadosAnalise.irregularidades.map(item => `<li>[!] ${item}</li>`).join("") || "<li>[✔] Ausência de conflitos de dados cadastrais.</li>";
+            boxSucesso.innerHTML = dadosAnalise.validados.map(item => `<li>[+] ${item}</li>`).join("") || "<li>Aguardando entrada de parâmetros...</li>";
+
+            const focado = document.activeElement ? document.activeElement.id : null;
+            const divDicas = document.getElementById("caixa-de-dicas");
+            
+            if (focado === "f-uid") divDicas.innerText = BancoDeDados.orientacoes.uid;
+            else if (focado === "f-nickname") divDicas.innerText = BancoDeDados.orientacoes.nickname;
+            else if (focado === "f-device-primeiro" || focado === "f-device-recente") divDicas.innerText = BancoDeDados.orientacoes.devices;
+            else if (focado === "f-recargas") divDicas.innerText = BancoDeDados.orientacoes.recargas;
+            else if (focado === "f-itens-raros") divDicas.innerText = BancoDeDados.orientacoes.itens;
+
+            this.ultimoResultadoCompilado = dadosAnalise;
+        } catch(e) {}
+    },
+
+    gerarResultadoFinal: function() {
+        try {
+            this.atualizarAnalise();
+            const resultado = this.ultimoResultadoCompilado;
+
+            document.getElementById("resultado-pontos").innerText = `${resultado.score}/100`;
+            
+            const selo = document.getElementById("resultado-selo");
+            const txtChance = document.getElementById("resultado-chance");
+
+            if (resultado.score >= 80) {
+                selo.innerText = "EXCELENTE";
+                selo.style.color = "var(--cor-neon)";
+                txtChance.innerText = "PROBABILIDADE ALTA";
+                txtChance.style.color = "var(--cor-neon)";
+                this.escreverMensagemAssistente("pontosAltos");
+            } else if (resultado.score >= 50) {
+                selo.innerText = "MEDIANA";
+                selo.style.color = "var(--aviso-amarelo)";
+                txtChance.innerText = "PROBABILIDADE MÉDIA";
+                txtChance.style.color = "var(--aviso-amarelo)";
+            } else {
+                selo.innerText = "INSUFICIENTE";
+                selo.style.color = "#ff3333";
+                txtChance.innerText = "PROBABILIDADE BAIXA";
+                txtChance.style.color = "#ff3333";
+                this.escreverMensagemAssistente("pointsBaixos");
+            }
+
+            document.getElementById("texto-ticket-final").value = CriadorDeTexto.compilarFormatacao();
+            this.irParaEtapa(4);
+        } catch(e) {
+            alert("Erro de compilação da petição.");
+        }
+    },
+
+    escreverMensagemAssistente: function(index) {
+        try {
+            const mensagem = BancoDeDados.mensagensChat[index];
+            if (!mensagem) return;
+
+            const chatBox = document.getElementById("caixa-de-chat");
+            const elementoMsg = document.createElement("div");
+            elementoMsg.className = "msg-chat sistema";
+            elementoMsg.innerText = mensagem;
+            
+            chatBox.appendChild(elementoMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } catch(e) {}
+    },
+
+    gravarRegistrosCache: function() {
+        try {
+            const payload = {
+                uid: document.getElementById("f-uid").value,
+                nick: document.getElementById("f-nickname").value,
+                criacao: document.getElementById("f-criacao").value,
+                cenario: document.getElementById("f-cenario").value,
+                dev1: document.getElementById("f-device-primeiro").value,
+                dev2: document.getElementById("f-device-recente").value,
+                local: document.getElementById("f-localidade").value,
+                nicksAntigos: document.getElementById("f-nicks-antigos").value,
+                recargas: document.getElementById("f-recargas").value,
+                semRecargas: document.getElementById("f-no-recargas").checked,
+                itens: document.getElementById("f-itens-raros").value,
+                tom: document.getElementById("f-tom").value
+            };
+            localStorage.setItem("cache_central_recuperacao_ff", JSON.stringify(payload));
+        } catch(erro) {
+            console.error("Falha ao salvar dados locais.", erro);
+        }
+    },
+
+    recuperarRegistrosCache: function() {
+        try {
+            const bruto = localStorage.getItem("cache_central_recuperacao_ff");
+            if (!bruto) return;
+            const payload = JSON.parse(bruto);
+            document.getElementById("f-uid").value = payload.uid || "";
+            document.getElementById("f-nickname").value = payload.nick || "";
+            document.getElementById("f-criacao").value = payload.criacao || "";
+            document.getElementById("f-cenario").value = payload.cenario || "";
+            document.getElementById("f-device-primeiro").value = payload.dev1 || "";
+            document.getElementById("f-device-recente").value = payload.dev2 || "";
+            document.getElementById("f-localidade").value = payload.local || "";
+            document.getElementById("f-nicks-antigos").value = payload.nicksAntigos || "";
+            document.getElementById("f-recargas").value = payload.recargas || "";
+            document.getElementById("f-no-recargas").checked = payload.semRecargas || false;
+            document.getElementById("f-itens-raros").value = payload.itens || "";
+            document.getElementById("f-tom").value = payload.tom || "formal";
+            
+            if (payload.cenario) this.quandoMudarCenario();
+        } catch(erro) { 
+            console.error("Falha na restauração do cache de dados local.", erro); 
+        }
+    },
+
+    limparMemoria: function() {
+        if(confirm("Confirma a exclusão permanente de todos os dados do formulário alocados em seu terminal?")) {
+            try {
+                localStorage.removeItem("cache_central_recuperacao_ff");
+                window.location.reload();
+            } catch(e) {
+                window.location.href = window.location.href;
+            }
+        }
+    },
+
+    exportarBackup: function() {
+        try {
+            const dadosBrutos = localStorage.getItem("cache_central_recuperacao_ff");
+            if (!dadosBrutos) {
+                alert("Nenhum registro localizado em cache para exportação.");
+                return;
+            }
+            AmbienteWeb.gerenciarDownloadEstavel("backup_central_ff_recovery.json", dadosBrutos, "application/json");
+        } catch(e) {
+            alert("Falha inesperada no processador de exportação JSON.");
+        }
+    },
+
+    importarBackup: function() {
+        try {
+            const inputSeletor = document.createElement("input");
+            inputSeletor.type = "file";
+            inputSeletor.accept = ".json";
+            inputSeletor.onchange = e => {
+                try {
+                    const arquivo = e.target.files[0];
+                    const leitor = new FileReader();
+                    leitor.onload = eventoLeitura => {
+                        try {
+                            const txt = eventoLeitura.target.result;
+                            JSON.parse(txt); 
+                            localStorage.setItem("cache_central_recuperacao_ff", txt);
+                            window.location.reload();
+                        } catch(err) { 
+                            alert("Arquivo JSON corrompido ou incompatível."); 
+                        }
+                    };
+                    leitor.readAsText(arquivo);
+                } catch(errInner) {
+                    alert("Erro ao ler o arquivo selecionado.");
+                }
+            };
+            inputSeletor.click();
+        } catch(e) {
+            alert("A API de sistema de arquivos não respondeu corretamente.");
+        }
+    },
+
+    copiarTexto: function() {
+        const caixaTexto = document.getElementById("texto-ticket-final");
+        if (caixaTexto) {
+            AmbienteWeb.copiarTextoEstavel(caixaTexto.value);
+        }
+    },
+
+    baixarBlocoNotas: function() {
+        const conteudo = document.getElementById("texto-ticket-final").value;
+        AmbienteWeb.gerenciarDownloadEstavel("ticket_garena_suporte.txt", conteudo, "text/plain;charset=utf-8");
+    },
+
+    abrirLinkSuporte: function() {
+        window.open('https://ffsuporte.garena.com/support/home', '_blank');
+    }
+};
+</script>
+</body>
+</html>
